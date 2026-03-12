@@ -1,5 +1,31 @@
 import AppKit
 
+// MARK: - Constants
+
+private enum Layout {
+    static let horizontalPadding: CGFloat = 28
+    static let verticalPadding: CGFloat = 8
+    static let labelLeading: CGFloat = 14
+    static let labelTop: CGFloat = 4
+}
+
+private enum Defaults {
+    static let selectedLanguageKey = "selectedLanguageIndex"
+}
+
+private let updateIntervalSeconds: TimeInterval = 3600
+
+// MARK: - Models
+
+struct ProgressData {
+    let monthPercent: Int
+    let monthDaysLeft: Int
+    let monthName: String
+    let yearPercent: Int
+    let yearDaysLeft: Int
+    let year: String
+}
+
 struct Language {
     let name: String
     let locale: Locale
@@ -10,6 +36,8 @@ struct Language {
     let languageLabel: String
     let quitLabel: String
 }
+
+// MARK: - Language Definitions
 
 let languages: [Language] = [
     Language(name: "English", locale: Locale(identifier: "en"),
@@ -74,6 +102,8 @@ let languages: [Language] = [
              languageLabel: "언어", quitLabel: "종료"),
 ]
 
+// MARK: - AppDelegate
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var monthPercentLabel: NSTextField!
@@ -84,23 +114,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var languageMenuItem: NSMenuItem!
     private var quitMenuItem: NSMenuItem!
     private var timer: Timer?
+    private var monthFormatter = DateFormatter()
     private var selectedLanguageIndex: Int = {
-        let saved = UserDefaults.standard.integer(forKey: "selectedLanguageIndex")
+        let saved = UserDefaults.standard.integer(forKey: Defaults.selectedLanguageKey)
         return saved < languages.count ? saved : 0
     }()
 
     private func makeInfoItem(_ text: String) -> (NSMenuItem, NSTextField) {
         let label = NSTextField(labelWithString: text)
-        label.font = NSFont.menuFont(ofSize: 0)
+        label.font = NSFont.menuFont(ofSize: NSFont.systemFontSize)
         label.textColor = .labelColor
         label.sizeToFit()
 
         let container = NSView(frame: NSRect(
             x: 0, y: 0,
-            width: label.frame.width + 28,
-            height: label.frame.height + 8
+            width: label.frame.width + Layout.horizontalPadding,
+            height: label.frame.height + Layout.verticalPadding
         ))
-        label.frame.origin = NSPoint(x: 14, y: 4)
+        label.frame.origin = NSPoint(x: Layout.labelLeading, y: Layout.labelTop)
         container.addSubview(label)
 
         let item = NSMenuItem()
@@ -112,28 +143,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         label.stringValue = text
         label.sizeToFit()
         label.superview?.frame.size = NSSize(
-            width: label.frame.width + 28,
-            height: label.frame.height + 8
+            width: label.frame.width + Layout.horizontalPadding,
+            height: label.frame.height + Layout.verticalPadding
         )
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        let (monthPercent, monthDaysLeft, monthName, yearPercent, yearDaysLeft, year) = computeProgress()
+        let progress = computeProgress()
         let lang = languages[selectedLanguageIndex]
 
         let menu = NSMenu()
         var item: NSMenuItem
 
-        (item, monthPercentLabel) = makeInfoItem(lang.monthFormat(monthPercent))
+        (item, monthPercentLabel) = makeInfoItem(lang.monthFormat(progress.monthPercent))
         menu.addItem(item)
-        (item, monthInfoLabel) = makeInfoItem(lang.monthDaysFormat(monthDaysLeft, monthName))
+        (item, monthInfoLabel) = makeInfoItem(lang.monthDaysFormat(progress.monthDaysLeft, progress.monthName))
         menu.addItem(item)
         menu.addItem(NSMenuItem.separator())
-        (item, yearPercentLabel) = makeInfoItem(lang.yearFormat(yearPercent))
+        (item, yearPercentLabel) = makeInfoItem(lang.yearFormat(progress.yearPercent))
         menu.addItem(item)
-        (item, yearDaysLabel) = makeInfoItem(lang.yearDaysFormat(yearDaysLeft, year))
+        (item, yearDaysLabel) = makeInfoItem(lang.yearDaysFormat(progress.yearDaysLeft, progress.year))
         menu.addItem(item)
         menu.addItem(NSMenuItem.separator())
 
@@ -155,13 +186,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(quitMenuItem)
         statusItem.menu = menu
 
-        statusItem.button?.title = "\(monthPercent)%"
-        timer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+        statusItem.button?.title = "\(progress.monthPercent)%"
+        timer = Timer.scheduledTimer(withTimeInterval: updateIntervalSeconds, repeats: true) { [weak self] _ in
             self?.updateProgress()
         }
     }
 
-    private func computeProgress() -> (Int, Int, String, Int, Int, String) {
+    private func computeProgress() -> ProgressData {
         let calendar = Calendar.current
         let now = Date()
 
@@ -169,43 +200,51 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let monthRange = calendar.range(of: .day, in: .month, for: now),
               let dayOfYear = calendar.ordinality(of: .day, in: .year, for: now),
               let yearRange = calendar.range(of: .day, in: .year, for: now) else {
-            return (0, 0, "", 0, 0, "")
+            return ProgressData(monthPercent: 0, monthDaysLeft: 0, monthName: "", yearPercent: 0, yearDaysLeft: 0, year: "")
         }
         let totalDaysInMonth = monthRange.count
         let monthPercent = Int(round(Double(day) / Double(totalDaysInMonth) * 100))
 
-        let formatter = DateFormatter()
-        formatter.locale = languages[selectedLanguageIndex].locale
-        let monthName = formatter.monthSymbols[calendar.component(.month, from: now) - 1]
+        monthFormatter.locale = languages[selectedLanguageIndex].locale
+        let monthName = monthFormatter.monthSymbols[calendar.component(.month, from: now) - 1]
 
         let totalDaysInYear = yearRange.count
         let yearPercent = Int(round(Double(dayOfYear) / Double(totalDaysInYear) * 100))
         let year = calendar.component(.year, from: now)
 
-        return (monthPercent, totalDaysInMonth - day, monthName, yearPercent, totalDaysInYear - dayOfYear, String(year))
+        return ProgressData(
+            monthPercent: monthPercent,
+            monthDaysLeft: totalDaysInMonth - day,
+            monthName: monthName,
+            yearPercent: yearPercent,
+            yearDaysLeft: totalDaysInYear - dayOfYear,
+            year: String(year)
+        )
     }
 
     @objc private func languageSelected(_ sender: NSMenuItem) {
         selectedLanguageIndex = sender.tag
-        UserDefaults.standard.set(selectedLanguageIndex, forKey: "selectedLanguageIndex")
+        UserDefaults.standard.set(selectedLanguageIndex, forKey: Defaults.selectedLanguageKey)
         for item in languageMenuItems { item.state = .off }
         sender.state = .on
         updateProgress()
     }
 
     private func updateProgress() {
-        let (monthPercent, monthDaysLeft, monthName, yearPercent, yearDaysLeft, year) = computeProgress()
+        let progress = computeProgress()
         let lang = languages[selectedLanguageIndex]
 
-        statusItem.button?.title = "\(monthPercent)%"
-        updateLabel(monthPercentLabel, lang.monthFormat(monthPercent))
-        updateLabel(monthInfoLabel, lang.monthDaysFormat(monthDaysLeft, monthName))
-        updateLabel(yearPercentLabel, lang.yearFormat(yearPercent))
-        updateLabel(yearDaysLabel, lang.yearDaysFormat(yearDaysLeft, year))
+        statusItem.button?.title = "\(progress.monthPercent)%"
+        updateLabel(monthPercentLabel, lang.monthFormat(progress.monthPercent))
+        updateLabel(monthInfoLabel, lang.monthDaysFormat(progress.monthDaysLeft, progress.monthName))
+        updateLabel(yearPercentLabel, lang.yearFormat(progress.yearPercent))
+        updateLabel(yearDaysLabel, lang.yearDaysFormat(progress.yearDaysLeft, progress.year))
         languageMenuItem.title = lang.languageLabel
         quitMenuItem.title = lang.quitLabel
     }
 }
+
+// MARK: - Entry Point
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
