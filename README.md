@@ -14,14 +14,14 @@ Open System Settings > General > Login Items, click +, and add the app.
 
 ## Languages
 
-English, Italiano, Espanol, Francais, Portugues, Deutsch, Simplified Chinese, Traditional Chinese, Japanese, Korean.
+English, Italiano, Español, Français, Português, Deutsch, 简体中文, 繁體中文, 日本語, 한국어.
 
 ## Build from source
 
 Requires Xcode Command Line Tools (`xcode-select --install`).
 
 ```
-git clone https://github.com/your-username/mac-month-progress-menubar.git
+git clone https://github.com/nicknad9/mac-month-progress-menubar.git
 cd mac-month-progress-menubar
 ./build.sh
 open "build/New Month's Resolution.app"

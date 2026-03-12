@@ -166,15 +166,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let now = Date()
 
         let day = calendar.component(.day, from: now)
-        let totalDaysInMonth = calendar.range(of: .day, in: .month, for: now)!.count
+        guard let monthRange = calendar.range(of: .day, in: .month, for: now),
+              let dayOfYear = calendar.ordinality(of: .day, in: .year, for: now),
+              let yearRange = calendar.range(of: .day, in: .year, for: now) else {
+            return (0, 0, "", 0, 0, "")
+        }
+        let totalDaysInMonth = monthRange.count
         let monthPercent = Int(round(Double(day) / Double(totalDaysInMonth) * 100))
 
         let formatter = DateFormatter()
         formatter.locale = languages[selectedLanguageIndex].locale
         let monthName = formatter.monthSymbols[calendar.component(.month, from: now) - 1]
 
-        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: now)!
-        let totalDaysInYear = calendar.range(of: .day, in: .year, for: now)!.count
+        let totalDaysInYear = yearRange.count
         let yearPercent = Int(round(Double(dayOfYear) / Double(totalDaysInYear) * 100))
         let year = calendar.component(.year, from: now)
 
