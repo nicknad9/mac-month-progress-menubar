@@ -8,6 +8,7 @@ struct Language {
     let yearFormat: (Int) -> String
     let yearDaysFormat: (Int, String) -> String
     let languageLabel: String
+    let launchAtLoginLabel: String
     let quitLabel: String
 }
 
@@ -17,61 +18,61 @@ let languages: [Language] = [
              monthDaysFormat: { "\($0) days left in \($1)" },
              yearFormat: { "Year: \($0)%" },
              yearDaysFormat: { "\($0) days left in \($1)" },
-             languageLabel: "Language", quitLabel: "Quit"),
+             languageLabel: "Language", launchAtLoginLabel: "Launch at Login", quitLabel: "Quit"),
     Language(name: "Italiano", locale: Locale(identifier: "it"),
              monthFormat: { "Mese: \($0)%" },
              monthDaysFormat: { "Mancano \($0) giorni alla fine di \($1)" },
              yearFormat: { "Anno: \($0)%" },
              yearDaysFormat: { "Mancano \($0) giorni alla fine del \($1)" },
-             languageLabel: "Lingua", quitLabel: "Esci"),
+             languageLabel: "Lingua", launchAtLoginLabel: "Avvia al login", quitLabel: "Esci"),
     Language(name: "Español", locale: Locale(identifier: "es"),
              monthFormat: { "Mes: \($0)%" },
              monthDaysFormat: { "Quedan \($0) días de \($1)" },
              yearFormat: { "Año: \($0)%" },
              yearDaysFormat: { "Quedan \($0) días de \($1)" },
-             languageLabel: "Idioma", quitLabel: "Salir"),
+             languageLabel: "Idioma", launchAtLoginLabel: "Abrir al iniciar sesión", quitLabel: "Salir"),
     Language(name: "Français", locale: Locale(identifier: "fr"),
              monthFormat: { "Mois : \($0) %" },
              monthDaysFormat: { "Il reste \($0) jours en \($1)" },
              yearFormat: { "Année : \($0) %" },
              yearDaysFormat: { "Il reste \($0) jours en \($1)" },
-             languageLabel: "Langue", quitLabel: "Quitter"),
+             languageLabel: "Langue", launchAtLoginLabel: "Ouvrir à la connexion", quitLabel: "Quitter"),
     Language(name: "Português", locale: Locale(identifier: "pt"),
              monthFormat: { "Mês: \($0)%" },
              monthDaysFormat: { "Faltam \($0) dias para o fim de \($1)" },
              yearFormat: { "Ano: \($0)%" },
              yearDaysFormat: { "Faltam \($0) dias para o fim de \($1)" },
-             languageLabel: "Idioma", quitLabel: "Sair"),
+             languageLabel: "Idioma", launchAtLoginLabel: "Abrir ao iniciar sessão", quitLabel: "Sair"),
     Language(name: "Deutsch", locale: Locale(identifier: "de"),
              monthFormat: { "Monat: \($0) %" },
              monthDaysFormat: { "Noch \($0) Tage im \($1)" },
              yearFormat: { "Jahr: \($0) %" },
              yearDaysFormat: { "Noch \($0) Tage in \($1)" },
-             languageLabel: "Sprache", quitLabel: "Beenden"),
+             languageLabel: "Sprache", launchAtLoginLabel: "Beim Anmelden öffnen", quitLabel: "Beenden"),
     Language(name: "简体中文", locale: Locale(identifier: "zh-Hans"),
              monthFormat: { "月进度: \($0)%" },
              monthDaysFormat: { "\($1)还剩\($0)天" },
              yearFormat: { "年进度: \($0)%" },
              yearDaysFormat: { "\($1)年还剩\($0)天" },
-             languageLabel: "语言", quitLabel: "退出"),
+             languageLabel: "语言", launchAtLoginLabel: "登录时打开", quitLabel: "退出"),
     Language(name: "繁體中文", locale: Locale(identifier: "zh-Hant"),
              monthFormat: { "月進度: \($0)%" },
              monthDaysFormat: { "\($1)還剩\($0)天" },
              yearFormat: { "年進度: \($0)%" },
              yearDaysFormat: { "\($1)年還剩\($0)天" },
-             languageLabel: "語言", quitLabel: "結束"),
+             languageLabel: "語言", launchAtLoginLabel: "登入時打開", quitLabel: "結束"),
     Language(name: "日本語", locale: Locale(identifier: "ja"),
              monthFormat: { "今月: \($0)%" },
              monthDaysFormat: { "\($1)はあと\($0)日" },
              yearFormat: { "今年: \($0)%" },
              yearDaysFormat: { "\($1)年はあと\($0)日" },
-             languageLabel: "言語", quitLabel: "終了"),
+             languageLabel: "言語", launchAtLoginLabel: "ログイン時に開く", quitLabel: "終了"),
     Language(name: "한국어", locale: Locale(identifier: "ko"),
              monthFormat: { "이번 달: \($0)%" },
              monthDaysFormat: { "\($1) \($0)일 남음" },
              yearFormat: { "올해: \($0)%" },
              yearDaysFormat: { "\($1)년 \($0)일 남음" },
-             languageLabel: "언어", quitLabel: "종료"),
+             languageLabel: "언어", launchAtLoginLabel: "로그인 시 열기", quitLabel: "종료"),
 ]
 
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -82,8 +83,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var yearDaysLabel: NSTextField!
     private var languageMenuItems: [NSMenuItem] = []
     private var languageMenuItem: NSMenuItem!
+    private var launchAtLoginMenuItem: NSMenuItem!
     private var quitMenuItem: NSMenuItem!
     private var timer: Timer?
+
+    private let launchAgentLabel = "com.newmonthsresolution.launcher"
+    private var launchAgentPath: String {
+        NSHomeDirectory() + "/Library/LaunchAgents/\(launchAgentLabel).plist"
+    }
+
+    private var isLaunchAtLoginEnabled: Bool {
+        FileManager.default.fileExists(atPath: launchAgentPath)
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        if enabled {
+            let appPath = Bundle.main.bundlePath
+            let plist: [String: Any] = [
+                "Label": launchAgentLabel,
+                "ProgramArguments": ["/usr/bin/open", appPath],
+                "RunAtLoad": true
+            ]
+            let data = try? PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            FileManager.default.createFile(atPath: launchAgentPath, contents: data)
+        } else {
+            try? FileManager.default.removeItem(atPath: launchAgentPath)
+        }
+    }
     private var selectedLanguageIndex: Int = {
         let saved = UserDefaults.standard.integer(forKey: "selectedLanguageIndex")
         return saved < languages.count ? saved : 0
@@ -150,6 +176,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         languageMenuItem.submenu = langSubmenu
         menu.addItem(languageMenuItem)
 
+        launchAtLoginMenuItem = NSMenuItem(title: lang.launchAtLoginLabel, action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
+        launchAtLoginMenuItem.target = self
+        launchAtLoginMenuItem.state = isLaunchAtLoginEnabled ? .on : .off
+        menu.addItem(launchAtLoginMenuItem)
+
         menu.addItem(NSMenuItem.separator())
         quitMenuItem = NSMenuItem(title: lang.quitLabel, action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quitMenuItem)
@@ -185,6 +216,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return (monthPercent, totalDaysInMonth - day, monthName, yearPercent, totalDaysInYear - dayOfYear, String(year))
     }
 
+    @objc private func toggleLaunchAtLogin() {
+        let newState = !isLaunchAtLoginEnabled
+        setLaunchAtLogin(newState)
+        launchAtLoginMenuItem.state = newState ? .on : .off
+    }
+
     @objc private func languageSelected(_ sender: NSMenuItem) {
         selectedLanguageIndex = sender.tag
         UserDefaults.standard.set(selectedLanguageIndex, forKey: "selectedLanguageIndex")
@@ -203,6 +240,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateLabel(yearPercentLabel, lang.yearFormat(yearPercent))
         updateLabel(yearDaysLabel, lang.yearDaysFormat(yearDaysLeft, year))
         languageMenuItem.title = lang.languageLabel
+        launchAtLoginMenuItem.title = lang.launchAtLoginLabel
         quitMenuItem.title = lang.quitLabel
     }
 }

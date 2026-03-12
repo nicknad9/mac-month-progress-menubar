@@ -10,10 +10,6 @@ A small macOS menu bar app that shows how far you are into the current month. Th
 2. Open the `.dmg` and drag the app to your Applications folder
 3. Since the app is not code-signed, macOS will block it on first launch. Right-click the app, select Open, then click Open again in the dialog. You only need to do this once.
 
-## Launch at login
-
-Open System Settings > General > Login Items, click +, and add the app.
-
 ## Languages
 
 English, Italiano, Español, Français, Português, Deutsch, 简体中文, 繁體中文, 日本語, 한국어.
