@@ -84,7 +84,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var languageMenuItem: NSMenuItem!
     private var quitMenuItem: NSMenuItem!
     private var timer: Timer?
-    private var selectedLanguageIndex = 0
+    private var selectedLanguageIndex: Int = {
+        let saved = UserDefaults.standard.integer(forKey: "selectedLanguageIndex")
+        return saved < languages.count ? saved : 0
+    }()
 
     private func makeInfoItem(_ text: String) -> (NSMenuItem, NSTextField) {
         let label = NSTextField(labelWithString: text)
@@ -180,6 +183,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func languageSelected(_ sender: NSMenuItem) {
         selectedLanguageIndex = sender.tag
+        UserDefaults.standard.set(selectedLanguageIndex, forKey: "selectedLanguageIndex")
         for item in languageMenuItems { item.state = .off }
         sender.state = .on
         updateProgress()
