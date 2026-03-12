@@ -16,7 +16,7 @@ Open System Settings > General > Login Items, click +, and add the app.
 
 English, Italiano, Español, Français, Português, Deutsch, 简体中文, 繁體中文, 日本語, 한국어.
 
-## Build from source
+## Build from source (for developers)
 
 Requires Xcode Command Line Tools (`xcode-select --install`).
 
