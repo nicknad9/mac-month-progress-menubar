@@ -1,4 +1,4 @@
-# New Month's Resolution
+# monthly,
 
 A small macOS menu bar app that shows how far you are into the current month. The idea is to set goals each month instead of once a year.
 
