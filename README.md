@@ -2,6 +2,8 @@
 
 A small macOS menu bar app that shows how far you are into the current month. The idea is to set goals each month instead of once a year.
 
+<img width="672" height="476" alt="image" src="https://github.com/user-attachments/assets/37f29651-e7b0-46c2-83ac-b025c3d8d74e" />
+
 ## Install
 
 1. Download `New Month's Resolution.dmg` from the [latest release](../../releases/latest)
