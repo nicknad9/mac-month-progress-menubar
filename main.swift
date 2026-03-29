@@ -213,20 +213,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let now = Date()
 
         let day = calendar.component(.day, from: now)
+        let hour = calendar.component(.hour, from: now)
+        let hourFraction = Double(hour) / 24.0
         guard let monthRange = calendar.range(of: .day, in: .month, for: now),
               let dayOfYear = calendar.ordinality(of: .day, in: .year, for: now),
               let yearRange = calendar.range(of: .day, in: .year, for: now) else {
             return (0, 0, "", 0, 0, "")
         }
         let totalDaysInMonth = monthRange.count
-        let monthPercent = Int(round(Double(day) / Double(totalDaysInMonth) * 100))
+        let monthPercent = Int(round((Double(day - 1) + hourFraction) / Double(totalDaysInMonth) * 100))
 
         let formatter = DateFormatter()
         formatter.locale = languages[selectedLanguageIndex].locale
         let monthName = formatter.monthSymbols[calendar.component(.month, from: now) - 1]
 
         let totalDaysInYear = yearRange.count
-        let yearPercent = Int(round(Double(dayOfYear) / Double(totalDaysInYear) * 100))
+        let yearPercent = Int(round((Double(dayOfYear - 1) + hourFraction) / Double(totalDaysInYear) * 100))
         let year = calendar.component(.year, from: now)
 
         return (monthPercent, totalDaysInMonth - day, monthName, yearPercent, totalDaysInYear - dayOfYear, String(year))
