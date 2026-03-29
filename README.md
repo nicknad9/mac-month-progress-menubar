@@ -8,7 +8,11 @@ A small macOS menu bar app that shows how far you are into the current month. Th
 
 1. Download `New Month's Resolution.dmg` from the [latest release](../../releases/latest)
 2. Open the `.dmg` and drag the app to your Applications folder
-3. Since the app is not code-signed, macOS will block it on first launch. Right-click the app, select Open, then click Open again in the dialog. You only need to do this once.
+3. Since the app is not code-signed, macOS will block it on first launch. Open Terminal and run:
+   ```
+   xattr -d com.apple.quarantine "/Applications/New Month's Resolution.app"
+   ```
+   Then open the app normally. You only need to do this once.
 
 ## Languages
 
